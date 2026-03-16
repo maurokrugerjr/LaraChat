@@ -1,59 +1,120 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# LaraChat
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplicação de chat em tempo real construída com Laravel 12, WebSockets via Laravel Reverb, filas assíncronas com Laravel Horizon e armazenamento de arquivos com MinIO — totalmente containerizada com Docker.
 
-## About Laravel
+## Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+| Camada | Tecnologia |
+|---|---|
+| Backend | PHP 8.4 + Laravel 12 |
+| Banco de dados | PostgreSQL 16 |
+| Cache / Sessão / Filas | Redis 7 |
+| WebSocket | Laravel Reverb |
+| Worker de filas | Laravel Horizon |
+| Storage | MinIO (S3-compatível) |
+| Servidor web | Nginx 1.25 |
+| E-mail (dev) | Mailpit |
+| Frontend build | Vite |
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Pré-requisitos
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- [Docker](https://docs.docker.com/get-docker/) e [Docker Compose](https://docs.docker.com/compose/install/)
 
-## Learning Laravel
+## Instalação
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+**1. Clone o repositório**
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+git clone <url-do-repositorio> larachat
+cd larachat
+```
 
-## Laravel Sponsors
+**2. Configure o ambiente**
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+cp .env.example .env
+```
 
-### Premium Partners
+**3. Suba os containers**
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+```bash
+docker-compose up -d --build
+```
 
-## Contributing
+**4. Gere a chave da aplicação**
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+docker-compose exec app php artisan key:generate
+```
 
-## Code of Conduct
+**5. Execute as migrations**
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+docker-compose exec app php artisan migrate
+```
 
-## Security Vulnerabilities
+A aplicação estará disponível em `http://localhost:8000`.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Serviços
 
-## License
+| Serviço | URL / Porta |
+|---|---|
+| Aplicação | http://localhost:8000 |
+| WebSocket (Reverb) | ws://localhost:8080 |
+| MinIO Console | http://localhost:9001 |
+| Mailpit (e-mails) | http://localhost:8025 |
+| PostgreSQL | localhost:5432 |
+| Redis | localhost:6379 |
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Workers (opcionais)
+
+Horizon e Reverb rodam como perfis separados para não consumir recursos desnecessários em desenvolvimento:
+
+```bash
+# Subir todos os workers junto com os demais serviços
+docker-compose --profile workers up -d
+
+# Ou subir individualmente
+docker-compose up -d horizon
+docker-compose up -d reverb
+```
+
+## Comandos úteis
+
+```bash
+# Acessar o container da aplicação
+docker-compose exec app bash
+
+# Rodar migrations
+docker-compose exec app php artisan migrate
+
+# Acessar o tinker
+docker-compose exec app php artisan tinker
+
+# Ver logs da aplicação em tempo real
+docker-compose exec app php artisan pail
+
+# Rodar os testes
+docker-compose exec app php artisan test
+
+# Parar todos os containers
+docker-compose down
+
+# Parar e remover volumes (apaga dados do banco)
+docker-compose down -v
+```
+
+## Variáveis de ambiente
+
+Todas as variáveis estão documentadas no `.env.example`. Os principais grupos são:
+
+- **Banco de dados** — conexão com PostgreSQL
+- **Redis** — cache, sessão e filas
+- **Reverb** — servidor WebSocket
+- **MinIO / S3** — armazenamento de arquivos
+- **Mailpit** — captura de e-mails em desenvolvimento
+- **Horizon** — prefixo das filas no Redis
+
+## Licença
+
+MIT
