@@ -29,7 +29,7 @@ services:
     container_name: larachat_nginx
     restart: unless-stopped
     ports:
-      - "${APP_PORT:-8000}:80"
+      - "${APP_PORT:-80}:80"
     volumes:
       - .:/var/www
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
@@ -107,6 +107,24 @@ services:
     ports:
       - "${MAILPIT_PORT:-1025}:1025"
       - "${MAILPIT_DASHBOARD_PORT:-8025}:8025"
+    networks:
+      - larachat
+
+  # ─── Frontend Vue 3 (dev) ───────────────────────────────────────────────────
+  web:
+    build:
+      context: ../LaraChat-web
+      dockerfile: Dockerfile.dev
+    container_name: larachat_web
+    restart: unless-stopped
+    # porta exposta diretamente apenas para acesso sem nginx (opcional)
+    # ports:
+    #   - "${WEB_PORT:-5173}:3000"
+    volumes:
+      - ../LaraChat-web:/app
+      - /app/node_modules
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
     networks:
       - larachat
 

@@ -14,7 +14,7 @@ Aplicação de chat em tempo real com arquitetura desacoplada: **API Laravel** +
 | Camada | Tecnologia |
 |---|---|
 | Backend | PHP 8.4 + Laravel 12 |
-| Autenticação | Laravel Sanctum (token Bearer) |
+| Autenticação | JWT (php-open-source-saver/jwt-auth) |
 | Banco de dados | PostgreSQL 16 |
 | Cache / Sessão / Filas | Redis 7 |
 | WebSocket | Laravel Reverb |
@@ -94,9 +94,10 @@ docker compose up -d reverb
 
 | Método | Rota | Auth | Descrição |
 |---|---|---|---|
-| POST | `/api/auth/register` | — | Cria conta e retorna token |
-| POST | `/api/auth/login` | — | Autentica e retorna token |
+| POST | `/api/auth/register` | — | Cria conta e retorna JWT |
+| POST | `/api/auth/login` | — | Autentica e retorna JWT |
 | POST | `/api/auth/logout` | Bearer | Invalida o token atual |
+| POST | `/api/auth/refresh` | Bearer | Renova o JWT |
 | GET | `/api/auth/me` | Bearer | Retorna o usuário autenticado |
 
 ## Comandos úteis
