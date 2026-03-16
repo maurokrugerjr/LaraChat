@@ -1,12 +1,20 @@
 # LaraChat
 
-Aplicação de chat em tempo real construída com Laravel 12, WebSockets via Laravel Reverb, filas assíncronas com Laravel Horizon e armazenamento de arquivos com MinIO — totalmente containerizada com Docker.
+Aplicação de chat em tempo real com arquitetura desacoplada: **API Laravel** + **SPA Vue 3**, comunicando via REST + WebSockets (Reverb), filas assíncronas (Horizon), armazenamento de arquivos (MinIO) e autenticação por token (Sanctum) — totalmente containerizada com Docker.
+
+## Repositórios
+
+| Projeto | Descrição |
+|---|---|
+| `LaraChat/` (este) | API REST — Laravel 12 + Sanctum |
+| [`LaraChat-web/`](../LaraChat-web) | SPA Frontend — Vue 3 + Vite |
 
 ## Stack
 
 | Camada | Tecnologia |
 |---|---|
 | Backend | PHP 8.4 + Laravel 12 |
+| Autenticação | Laravel Sanctum (token Bearer) |
 | Banco de dados | PostgreSQL 16 |
 | Cache / Sessão / Filas | Redis 7 |
 | WebSocket | Laravel Reverb |
@@ -14,7 +22,7 @@ Aplicação de chat em tempo real construída com Laravel 12, WebSockets via Lar
 | Storage | MinIO (S3-compatível) |
 | Servidor web | Nginx 1.25 |
 | E-mail (dev) | Mailpit |
-| Frontend build | Vite |
+| Frontend | Vue 3 + Vite (projeto separado) |
 
 ## Pré-requisitos
 
@@ -22,44 +30,47 @@ Aplicação de chat em tempo real construída com Laravel 12, WebSockets via Lar
 
 ## Instalação
 
-**1. Clone o repositório**
+**1. Clone os dois repositórios lado a lado**
 
 ```bash
-git clone <url-do-repositorio> larachat
-cd larachat
+git clone <url-larachat>      LaraChat
+git clone <url-larachat-web>  LaraChat-web
 ```
 
-**2. Configure o ambiente**
+> Os dois diretórios precisam estar no mesmo nível — o Docker Compose referencia `../LaraChat-web`.
+
+**2. Configure os ambientes**
 
 ```bash
+# API
+cd LaraChat
+cp .env.example .env
+
+# Frontend
+cd ../LaraChat-web
 cp .env.example .env
 ```
 
 **3. Suba os containers**
 
 ```bash
-docker-compose up -d --build
+cd LaraChat
+docker compose up -d --build
 ```
 
-**4. Gere a chave da aplicação**
+**4. Gere a chave e rode as migrations**
 
 ```bash
-docker-compose exec app php artisan key:generate
+docker compose exec app php artisan key:generate
+docker compose exec app php artisan migrate
 ```
-
-**5. Execute as migrations**
-
-```bash
-docker-compose exec app php artisan migrate
-```
-
-A aplicação estará disponível em `http://localhost:8000`.
 
 ## Serviços
 
-| Serviço | URL / Porta |
+| Serviço | URL |
 |---|---|
-| Aplicação | http://localhost:8000 |
+| SPA Vue 3 | http://localhost:5173 |
+| API Laravel | http://localhost:8000 |
 | WebSocket (Reverb) | ws://localhost:8080 |
 | MinIO Console | http://localhost:9001 |
 | Mailpit (e-mails) | http://localhost:8025 |
@@ -68,52 +79,61 @@ A aplicação estará disponível em `http://localhost:8000`.
 
 ## Workers (opcionais)
 
-Horizon e Reverb rodam como perfis separados para não consumir recursos desnecessários em desenvolvimento:
+Horizon e Reverb rodam como perfis separados:
 
 ```bash
-# Subir todos os workers junto com os demais serviços
-docker-compose --profile workers up -d
+# Subir com todos os workers
+docker compose --profile workers up -d
 
-# Ou subir individualmente
-docker-compose up -d horizon
-docker-compose up -d reverb
+# Ou individualmente
+docker compose up -d horizon
+docker compose up -d reverb
 ```
+
+## Endpoints da API
+
+| Método | Rota | Auth | Descrição |
+|---|---|---|---|
+| POST | `/api/auth/register` | — | Cria conta e retorna token |
+| POST | `/api/auth/login` | — | Autentica e retorna token |
+| POST | `/api/auth/logout` | Bearer | Invalida o token atual |
+| GET | `/api/auth/me` | Bearer | Retorna o usuário autenticado |
 
 ## Comandos úteis
 
 ```bash
 # Acessar o container da aplicação
-docker-compose exec app bash
+docker compose exec app bash
 
 # Rodar migrations
-docker-compose exec app php artisan migrate
+docker compose exec app php artisan migrate
 
-# Acessar o tinker
-docker-compose exec app php artisan tinker
+# Tinker
+docker compose exec app php artisan tinker
 
-# Ver logs da aplicação em tempo real
-docker-compose exec app php artisan pail
+# Logs em tempo real
+docker compose exec app php artisan pail
 
-# Rodar os testes
-docker-compose exec app php artisan test
+# Rodar testes
+docker compose exec app php artisan test
 
-# Parar todos os containers
-docker-compose down
+# Parar containers
+docker compose down
 
-# Parar e remover volumes (apaga dados do banco)
-docker-compose down -v
+# Parar e remover volumes (apaga dados)
+docker compose down -v
 ```
 
 ## Variáveis de ambiente
 
-Todas as variáveis estão documentadas no `.env.example`. Os principais grupos são:
-
-- **Banco de dados** — conexão com PostgreSQL
-- **Redis** — cache, sessão e filas
-- **Reverb** — servidor WebSocket
-- **MinIO / S3** — armazenamento de arquivos
-- **Mailpit** — captura de e-mails em desenvolvimento
-- **Horizon** — prefixo das filas no Redis
+| Grupo | Variáveis |
+|---|---|
+| Banco de dados | `DB_*` — conexão com PostgreSQL |
+| Redis | `REDIS_*` — cache, sessão e filas |
+| Reverb | `REVERB_*` — servidor WebSocket |
+| MinIO / S3 | `AWS_*` / `MINIO_*` — armazenamento |
+| Mailpit | `MAIL_*` — captura de e-mails |
+| Frontend | `FRONTEND_URL` — origem permitida no CORS |
 
 ## Licença
 
