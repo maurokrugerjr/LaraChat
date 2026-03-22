@@ -113,7 +113,7 @@ services:
   # ─── Frontend Vue 3 (dev) ───────────────────────────────────────────────────
   web:
     build:
-      context: ../LaraChat-web
+      context: ../LaraChatWeb
       dockerfile: Dockerfile.dev
     container_name: larachat_web
     restart: unless-stopped
@@ -121,7 +121,7 @@ services:
     # ports:
     #   - "${WEB_PORT:-5173}:3000"
     volumes:
-      - ../LaraChat-web:/app
+      - ../LaraChatWeb:/app
       - /app/node_modules
     environment:
       VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
