@@ -4,11 +4,12 @@ namespace App\Models;
 
 use App\Models\Traits\BelongsToMensagem;
 use App\Models\Traits\BelongsToUsuario;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class MensagemLida extends Model
 {
-    use BelongsToMensagem, BelongsToUsuario;
+    use HasFactory, BelongsToMensagem, BelongsToUsuario;
 
     protected $table = 'mensagens_lidas';
 
