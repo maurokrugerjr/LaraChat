@@ -21,21 +21,38 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'nome' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
+            'nome'              => fake()->name(),
+            'email'             => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'senha' => 'senha123',
-            'remember_token' => \Illuminate\Support\Str::random(10),
+            'senha'             => 'senha123',
+            'avatar'            => null,
+            'bio'               => fake()->optional()->sentence(),
+            'status_customizado' => fake()->optional()->words(3, true),
+            'status'            => fake()->randomElement(['online', 'offline']),
+            'ultimo_acesso'     => fake()->dateTimeBetween('-30 days', 'now'),
+            'remember_token'    => \Illuminate\Support\Str::random(10),
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
     public function unverified(): static
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    public function online(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'online',
+        ]);
+    }
+
+    public function offline(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status'        => 'offline',
+            'ultimo_acesso' => fake()->dateTimeBetween('-7 days', '-1 hour'),
         ]);
     }
 }

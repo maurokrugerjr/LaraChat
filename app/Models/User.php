@@ -3,7 +3,10 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
@@ -20,6 +23,8 @@ class User extends Authenticatable implements JWTSubject
         'email',
         'senha',
         'avatar',
+        'bio',
+        'status_customizado',
         'status',
         'ultimo_acesso',
     ];
@@ -56,5 +61,23 @@ class User extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims(): array
     {
         return [];
+    }
+
+    public function mensagens(): HasMany
+    {
+        return $this->hasMany(Mensagem::class, 'usuario_id');
+    }
+
+    public function conversas(): BelongsToMany
+    {
+        return $this->belongsToMany(Conversa::class, 'conversa_participantes', 'usuario_id', 'conversa_id')
+            ->using(ConversaParticipante::class)
+            ->withPivot(['funcao', 'ultimo_lido_em', 'silenciado_ate'])
+            ->withTimestamps();
+    }
+
+    public function scopeOnline(Builder $query): Builder
+    {
+        return $query->where('status', 'online');
     }
 }
